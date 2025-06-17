@@ -1,5 +1,6 @@
 import UserModel from "../model/user.model.js"
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken"
 
 export const signup=async(req,res)=>{
     try{
@@ -29,9 +30,23 @@ export const login=async(req,res)=>{
         const isMatch = await bcrypt.compare(password,user.password)
 
         if(!isMatch)
-             return res.status(401).json({message:"password doesn't match"})    
+             return res.status(401).json({message:"password doesn't match"})   
+            
+        const payload={
+            id:user._id,
+            fullname:user.fullname,
+            email:user.email,
+            role:user.role
+        }
 
-        res.json({message:"user login successful"})
+        const token = jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:"1d"})
+
+        res.cookie("accessToken",token,{
+          maxAge:24*60*60*1000,
+          httpOnly:true
+        })
+
+        res.json({message:"user login successful",token})
 
     }
     catch(err)
